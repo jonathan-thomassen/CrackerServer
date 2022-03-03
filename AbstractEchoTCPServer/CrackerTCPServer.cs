@@ -1,4 +1,6 @@
 ﻿using AbstractTCPServerClassLibrary.TCPServer;
+using PasswordCrackerCentralized.model;
+using PasswordCrackerCentralized.util;
 using System.Collections.Concurrent;
 
 namespace AbstractEchoTCPServer {
@@ -11,8 +13,9 @@ namespace AbstractEchoTCPServer {
         }
 
         public override void TcpServerWork(StreamReader reader, StreamWriter writer) {
-            List<string> fullDictionary = new List<string>();
             BlockingCollection<List<string>> chunks = new BlockingCollection<List<string>>();
+            List<UserInfo> users = new List<UserInfo>();
+            List<UserInfoClearText> results = new List<UserInfoClearText>();
 
             using (FileStream fs = new FileStream("webster-dictionary.txt", FileMode.Open, FileAccess.Read))
 
@@ -27,6 +30,8 @@ namespace AbstractEchoTCPServer {
                     n++;
                 }
             }
+
+            users = PasswordFileHandler.ReadPasswordFile("passwords.txt");
 
             string line = reader.ReadLine();
 
