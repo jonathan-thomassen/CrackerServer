@@ -30,24 +30,17 @@ namespace AbstractEchoTCPServer {
 
             string line = reader.ReadLine();
 
-            switch(line) {
+            switch(line.ToLower()) {
                 case "passwords":
-
+                    break;
+                case "nextchunk":
+                    break;
+                case "finished":
+                    break;
+                default:
+                    break;
             }
 
-            if (line.ToLower == "passwords") {
-                writer.Write()
-            }
-
-            if (line.ToLower == "nextchunk") {
-
-            }
-
-            if 
-
-            //writer.WriteAsync()
-            writer.WriteLine(line);
-            _nextClientStartpoint += _chunkSize;
             writer.Flush();
         }
     }
