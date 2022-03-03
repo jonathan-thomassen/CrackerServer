@@ -28,9 +28,22 @@ namespace AbstractEchoTCPServer {
                 }
             }
 
-
             string line = reader.ReadLine();
-            //reader.re
+
+            switch(line) {
+                case "passwords":
+
+            }
+
+            if (line.ToLower == "passwords") {
+                writer.Write()
+            }
+
+            if (line.ToLower == "nextchunk") {
+
+            }
+
+            if 
 
             //writer.WriteAsync()
             writer.WriteLine(line);
