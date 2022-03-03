@@ -20,6 +20,8 @@ namespace AbstractEchoTCPServer {
             List<UserInfo> uncracked = new List<UserInfo>();
             List<UserInfoClearText> results = new List<UserInfoClearText>();
 
+            
+
             using (FileStream fs = new FileStream("webster-dictionary.txt", FileMode.Open, FileAccess.Read))
 
             using (StreamReader dictionary = new StreamReader(fs)) {
@@ -34,6 +36,9 @@ namespace AbstractEchoTCPServer {
                 }
             }
 
+            int chunksProcessed = 0;
+            int chunkAmount = chunks.Count;
+
             uncracked = PasswordFileHandler.ReadPasswordFile("passwords.txt");
 
             var running = true;
@@ -41,31 +46,34 @@ namespace AbstractEchoTCPServer {
                 string line = reader.ReadLine();
                 switch (line.ToLower()) {
                     case "passwords":                        
-                        writer.Write(JsonSerializer.Serialize(uncracked));
+                        writer.WriteLine(JsonSerializer.Serialize(uncracked));
                         break;
                     case "nextchunk":
-                        writer.Write(JsonSerializer.Serialize(chunks.Take()));
+                        writer.WriteLine(JsonSerializer.Serialize(chunks.Take()));
                         break;
                     case "finished":
                         var n = int.Parse(reader.ReadLine());
                         for (int i = 0; i < n; i++) {
-                            UserInfoClearText newlyCracked = JsonSerializer.Deserialize<UserInfoClearText>(reader.Read());
+                            UserInfoClearText newlyCracked = JsonSerializer.Deserialize<UserInfoClearText>(reader.ReadLine());
                             uncracked.Remove(uncracked.Find(ui => ui.Username == newlyCracked.UserName));
                             results.Add(newlyCracked);
                         }
-                        writer.WriteLine("OK! Results recorded.");
+                        chunksProcessed++;
                         break;
                     default:
                         break;
                 }
                 writer.Flush();
 
-                if (uncracked.Count == 0 || chunks.Count == 0) {
+                if (uncracked.Count == 0 || chunksProcessed == chunkAmount) {
                     running = false;
                     stopwatch.Stop();
                 }
             }
 
+            foreach (UserInfoClearText cracked in results) {
+                Console.WriteLine(cracked);
+            }
             Console.WriteLine("Passwords cracked: " + results.Count);
             Console.WriteLine("Time elapsed: " + stopwatch.Elapsed);
         }
