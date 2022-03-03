@@ -36,3 +36,4 @@ if (debugLevelNode != null) {
 
 
 CrackerTCPServer tcpServer = new CrackerTCPServer(serverPort, serverName, shutDownPort, debugLevel);
+Console.ReadLine();

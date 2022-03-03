@@ -2,19 +2,22 @@
 using PasswordCrackerCentralized.model;
 using PasswordCrackerCentralized.util;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace AbstractEchoTCPServer {
     public class CrackerTCPServer : AbstractTCPServer {
         private int _chunkSize = 5000;
-        private int _nextClientStartpoint = 0;
 
         public CrackerTCPServer(int port, string name, int shutDownPort, string debugLevel) : base(port, name, shutDownPort, debugLevel) {
 
         }
 
         public override void TcpServerWork(StreamReader reader, StreamWriter writer) {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
             BlockingCollection<List<string>> chunks = new BlockingCollection<List<string>>();
-            List<UserInfo> users = new List<UserInfo>();
+            List<UserInfo> uncracked = new List<UserInfo>();
             List<UserInfoClearText> results = new List<UserInfoClearText>();
 
             using (FileStream fs = new FileStream("webster-dictionary.txt", FileMode.Open, FileAccess.Read))
@@ -31,22 +34,40 @@ namespace AbstractEchoTCPServer {
                 }
             }
 
-            users = PasswordFileHandler.ReadPasswordFile("passwords.txt");
+            uncracked = PasswordFileHandler.ReadPasswordFile("passwords.txt");
 
-            string line = reader.ReadLine();
+            var running = true;
+            while (running) {
+                string line = reader.ReadLine();
+                switch (line.ToLower()) {
+                    case "passwords":                        
+                        writer.Write(JsonSerializer.Serialize(uncracked));
+                        break;
+                    case "nextchunk":
+                        writer.Write(JsonSerializer.Serialize(chunks.Take()));
+                        break;
+                    case "finished":
+                        var n = int.Parse(reader.ReadLine());
+                        for (int i = 0; i < n; i++) {
+                            UserInfoClearText newlyCracked = JsonSerializer.Deserialize<UserInfoClearText>(reader.Read());
+                            uncracked.Remove(uncracked.Find(ui => ui.Username == newlyCracked.UserName));
+                            results.Add(newlyCracked);
+                        }
+                        writer.WriteLine("OK! Results recorded.");
+                        break;
+                    default:
+                        break;
+                }
+                writer.Flush();
 
-            switch(line.ToLower()) {
-                case "passwords":
-                    break;
-                case "nextchunk":
-                    break;
-                case "finished":
-                    break;
-                default:
-                    break;
+                if (uncracked.Count == 0 || chunks.Count == 0) {
+                    running = false;
+                    stopwatch.Stop();
+                }
             }
 
-            writer.Flush();
+            Console.WriteLine("Passwords cracked: " + results.Count);
+            Console.WriteLine("Time elapsed: " + stopwatch.Elapsed);
         }
     }
 }
