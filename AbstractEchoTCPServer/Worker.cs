@@ -1,5 +1,4 @@
-﻿using AbstractEchoTCPServer;
-using PasswordCrackerCentralized.model;
+﻿using PasswordCrackerCentralized.model;
 using PasswordCrackerCentralized.util;
 using System;
 using System.Collections.Concurrent;
@@ -20,6 +19,7 @@ namespace CrackerServer {
         public static int ChunksProcessed;
         public static int ChunkAmount;
         public static Stopwatch Stopwatch;
+        public static bool FirstClient;
 
 
         private static int _chunkSize = 5000;
@@ -59,8 +59,6 @@ namespace CrackerServer {
                 debugLevel = debugLevelNode.InnerText.Trim();
             }
 
-            Stopwatch = Stopwatch.StartNew();
-
             Chunks = new BlockingCollection<List<string>>();
             Uncracked = new List<UserInfo>();
             Results = new List<UserInfoClearText>();
@@ -83,7 +81,8 @@ namespace CrackerServer {
             ChunkAmount = Chunks.Count;
 
             Uncracked = PasswordFileHandler.ReadPasswordFile("passwords.txt");
-            
+            FirstClient = true;
+
             CrackerTCPServer tcpServer = new CrackerTCPServer(serverPort, serverName, shutDownPort, debugLevel);
         }
 

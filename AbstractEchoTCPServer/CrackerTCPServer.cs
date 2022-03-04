@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text.Json;
 
-namespace AbstractEchoTCPServer {
+namespace CrackerServer {
     public class CrackerTCPServer : AbstractTCPServer {
         private int _chunkSize = 5000;
 
@@ -16,9 +16,12 @@ namespace AbstractEchoTCPServer {
         }
 
         public override void TcpServerWork(StreamReader reader, StreamWriter writer) {
-            var connected = true;
-            while (connected) {
+            while (true) {
                 string line = reader.ReadLine();
+                if (Worker.FirstClient == true) {
+                    Worker.Stopwatch = Stopwatch.StartNew();
+                    Worker.FirstClient = false;
+                }
                 switch (line.ToLower()) {
                     case "passwords":
                         writer.WriteLine(JsonSerializer.Serialize(Worker.Uncracked));
@@ -41,29 +44,6 @@ namespace AbstractEchoTCPServer {
                 writer.Flush();
 
                 if (Worker.Uncracked.Count == 0 || Worker.ChunksProcessed == Worker.ChunkAmount) {
-                    TcpClient socket = new TcpClient("localhost", 12008);
-
-                    //Gets the stream object from the socket. The stream object is able to recieve and send data
-                    NetworkStream ns = socket.GetStream();
-                    //The StreamWriter is an easier way to write data to a Stream, it uses the NetworkStream
-                    StreamWriter stopWriter = new StreamWriter(ns);
-                    //stopWriter.WriteLine(" ");
-                    //stopWriter.Flush();
-                    //Thread.Sleep(10);
-                    //stopWriter.WriteLine(" ");
-                    //stopWriter.Flush();
-                    //Thread.Sleep(10);
-                    //stopWriter.WriteLine(" ");
-                    //stopWriter.Flush();
-                    //Thread.Sleep(10);
-                    //stopWriter.WriteLine(" ");
-                    //stopWriter.Flush();
-                    //Thread.Sleep(10);
-                    //stopWriter.WriteLine(" ");
-                    //stopWriter.Flush();
-
-                    connected = false;
-
                     Worker.Finish();                    
                 }
             }
