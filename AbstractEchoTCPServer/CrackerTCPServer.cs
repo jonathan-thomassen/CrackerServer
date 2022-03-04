@@ -1,8 +1,10 @@
 ﻿using AbstractTCPServerClassLibrary.TCPServer;
+using CrackerServer;
 using PasswordCrackerCentralized.model;
 using PasswordCrackerCentralized.util;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net.Sockets;
 using System.Text.Json;
 
 namespace AbstractEchoTCPServer {
@@ -14,68 +16,57 @@ namespace AbstractEchoTCPServer {
         }
 
         public override void TcpServerWork(StreamReader reader, StreamWriter writer) {
-            Stopwatch stopwatch = Stopwatch.StartNew();
-
-            BlockingCollection<List<string>> chunks = new BlockingCollection<List<string>>();
-            List<UserInfo> uncracked = new List<UserInfo>();
-            List<UserInfoClearText> results = new List<UserInfoClearText>();
-
-            
-
-            using (FileStream fs = new FileStream("webster-dictionary.txt", FileMode.Open, FileAccess.Read))
-
-            using (StreamReader dictionary = new StreamReader(fs)) {
-                var n = 0;
-                while (!dictionary.EndOfStream) {
-                    if (n % _chunkSize == 0) {
-                        chunks.Add(new List<string>());
-                    }
-                    string dictionaryEntry = dictionary.ReadLine();
-                    chunks.Last().Add(dictionaryEntry);
-                    n++;
-                }
-            }
-
-            int chunksProcessed = 0;
-            int chunkAmount = chunks.Count;
-
-            uncracked = PasswordFileHandler.ReadPasswordFile("passwords.txt");
-
-            var running = true;
-            while (running) {
+            var connected = true;
+            while (connected) {
                 string line = reader.ReadLine();
                 switch (line.ToLower()) {
-                    case "passwords":                        
-                        writer.WriteLine(JsonSerializer.Serialize(uncracked));
+                    case "passwords":
+                        writer.WriteLine(JsonSerializer.Serialize(Worker.Uncracked));
                         break;
                     case "nextchunk":
-                        writer.WriteLine(JsonSerializer.Serialize(chunks.Take()));
+                        writer.WriteLine(JsonSerializer.Serialize(Worker.Chunks.Take()));
                         break;
                     case "finished":
                         var n = int.Parse(reader.ReadLine());
                         for (int i = 0; i < n; i++) {
                             UserInfoClearText newlyCracked = JsonSerializer.Deserialize<UserInfoClearText>(reader.ReadLine());
-                            uncracked.Remove(uncracked.Find(ui => ui.Username == newlyCracked.UserName));
-                            results.Add(newlyCracked);
+                            Worker.Uncracked.Remove(Worker.Uncracked.Find(ui => ui.Username == newlyCracked.UserName));
+                            Worker.Results.Add(newlyCracked);
                         }
-                        chunksProcessed++;
+                        Worker.ChunksProcessed++;
                         break;
                     default:
                         break;
                 }
                 writer.Flush();
 
-                if (uncracked.Count == 0 || chunksProcessed == chunkAmount) {
-                    running = false;
-                    stopwatch.Stop();
+                if (Worker.Uncracked.Count == 0 || Worker.ChunksProcessed == Worker.ChunkAmount) {
+                    TcpClient socket = new TcpClient("localhost", 12008);
+
+                    //Gets the stream object from the socket. The stream object is able to recieve and send data
+                    NetworkStream ns = socket.GetStream();
+                    //The StreamWriter is an easier way to write data to a Stream, it uses the NetworkStream
+                    StreamWriter stopWriter = new StreamWriter(ns);
+                    //stopWriter.WriteLine(" ");
+                    //stopWriter.Flush();
+                    //Thread.Sleep(10);
+                    //stopWriter.WriteLine(" ");
+                    //stopWriter.Flush();
+                    //Thread.Sleep(10);
+                    //stopWriter.WriteLine(" ");
+                    //stopWriter.Flush();
+                    //Thread.Sleep(10);
+                    //stopWriter.WriteLine(" ");
+                    //stopWriter.Flush();
+                    //Thread.Sleep(10);
+                    //stopWriter.WriteLine(" ");
+                    //stopWriter.Flush();
+
+                    connected = false;
+
+                    Worker.Finish();                    
                 }
             }
-
-            foreach (UserInfoClearText cracked in results) {
-                Console.WriteLine(cracked);
-            }
-            Console.WriteLine("Passwords cracked: " + results.Count);
-            Console.WriteLine("Time elapsed: " + stopwatch.Elapsed);
         }
     }
 }
