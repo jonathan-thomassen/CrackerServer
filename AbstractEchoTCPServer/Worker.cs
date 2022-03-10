@@ -88,8 +88,14 @@ namespace CrackerServer {
 
         public static void Finish() {
             Stopwatch.Stop();
+            Console.WriteLine("Cracked passwords:");
             foreach (UserInfoClearText cracked in Results) {
                 Console.WriteLine(cracked);
+            }
+            Console.WriteLine();
+            Console.WriteLine("Uncracked passwords:");
+            foreach (UserInfo uncracked in Uncracked) {
+                Console.WriteLine(uncracked);
             }
             Console.WriteLine("Passwords cracked: " + Results.Count);
             Console.WriteLine("Time elapsed: " + Stopwatch.Elapsed);
